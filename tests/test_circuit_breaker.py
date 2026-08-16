@@ -51,3 +51,33 @@ def test_first_trip_wins() -> None:
 
     # At max iterations, the built-in max iter check should hit first
     assert cb.check(BreakerState(iteration_count=10)) == TripReason.MAX_ITERATIONS
+
+def test_trip_on_budget_exceeded() -> None:
+    cb = CircuitBreaker(CircuitBreakerConfig(max_cost_usd=1.0))
+    # Below budget
+    assert cb.check(BreakerState(iteration_count=1, total_cost_usd=0.99)) is None
+    # At budget
+    assert cb.check(BreakerState(iteration_count=1, total_cost_usd=1.0)) == TripReason.BUDGET_EXCEEDED
+    # Over budget
+    assert cb.check(BreakerState(iteration_count=1, total_cost_usd=1.5)) == TripReason.BUDGET_EXCEEDED
+
+def test_trip_on_token_limit_exceeded() -> None:
+    cb = CircuitBreaker(CircuitBreakerConfig(max_tokens=1000))
+    # Below limit
+    assert cb.check(BreakerState(iteration_count=1, total_tokens=999)) is None
+    # At limit
+    assert cb.check(BreakerState(iteration_count=1, total_tokens=1000)) == TripReason.TOKEN_LIMIT_EXCEEDED
+    # Over limit
+    assert cb.check(BreakerState(iteration_count=1, total_tokens=1001)) == TripReason.TOKEN_LIMIT_EXCEEDED
+
+def test_trip_on_file_error_limit() -> None:
+    cb = CircuitBreaker(CircuitBreakerConfig(max_file_errors=3))
+    # Below limit
+    assert cb.check(BreakerState(iteration_count=1, file_error_counts={"app.py": 2})) is None
+    # At limit
+    assert cb.check(BreakerState(iteration_count=1, file_error_counts={"app.py": 3})) == TripReason.FILE_ERROR_LIMIT
+    # Multiple files, one over limit
+    assert cb.check(BreakerState(
+        iteration_count=1, 
+        file_error_counts={"main.py": 1, "app.py": 4}
+    )) == TripReason.FILE_ERROR_LIMIT
