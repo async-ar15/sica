@@ -1,0 +1,22 @@
+__pycache__/
+*.pyc
+.venv/
+dist/
+*.egg-info/
+.env
+memory/checkpoint.md
+memory/notes.md
+memory/task_logs/
+memory/trajectory_logs/
+memory/skills/
+eval/results/
+
+
+agent.md
+context.md
+memory.md
+p1-plan.md
+p2-plan.md
+p3-plan.md
+Problem Statement.md
+prompts.md
