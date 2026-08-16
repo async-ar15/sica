@@ -3,10 +3,21 @@ from pydantic import BaseModel
 from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
+from rich.theme import Theme
 
 from agent.core.state_machine import AgentState
 from agent.memory.working import IterationSnapshot
 
+# OpenCode Design System Theme
+opencode_theme = Theme({
+    "success": "#30d158",
+    "danger": "#ff3b30",
+    "warning": "#ff9f0a",
+    "info": "#007aff",
+    "mute": "#9a9898",
+    "border": "#646262",
+    "primary": "#fdfcfc",
+})
 
 class TaskResult(BaseModel):
     success: bool
@@ -23,57 +34,62 @@ class TaskResult(BaseModel):
 
 class StatusDisplay:
     def __init__(self) -> None:
-        self.console = Console()
+        self.console = Console(theme=opencode_theme)
 
     def update(self, state: AgentState, iteration: int, max_iterations: int, tokens: int, cost: float, message: str) -> None:
-        table = Table(show_header=True, header_style="bold magenta")
+        table = Table(show_header=True, header_style="bold primary", border_style="border")
         table.add_column("State")
         table.add_column("Iteration")
         table.add_column("Tokens")
         table.add_column("Cost")
         table.add_column("Message")
 
-        color = "white"
+        color = "primary"
         if state == AgentState.COMPLETED:
-            color = "green"
+            color = "success"
         elif state == AgentState.FAILED:
-            color = "red"
+            color = "danger"
         elif state in (AgentState.CODING, AgentState.TESTING):
-            color = "yellow"
+            color = "warning"
         elif state == AgentState.PLANNING:
-            color = "blue"
+            color = "info"
 
         table.add_row(
             f"[{color}]{state.value}[/{color}]",
-            f"{iteration}/{max_iterations}",
-            str(tokens),
-            f"${cost:.4f}",
-            message
+            f"[mute]{iteration}/{max_iterations}[/mute]",
+            f"[mute]{tokens}[/mute]",
+            f"[mute]${cost:.4f}[/mute]",
+            f"[primary]{message}[/primary]"
         )
         self.console.print(table)
 
     def display_iteration(self, snapshot: IterationSnapshot) -> None:
-        self.console.print(f"[bold cyan]Iteration {snapshot.iteration} Summary:[/bold cyan]")
-        self.console.print(f"Tokens Used: {snapshot.tokens_used}")
-        self.console.print(f"Duration: {snapshot.duration_ms}ms")
+        self.console.print(f"[bold info]Iteration {snapshot.iteration} Summary:[/bold info]")
+        self.console.print(f"[mute]Tokens Used:[/mute] [primary]{snapshot.tokens_used}[/primary]")
+        self.console.print(f"[mute]Duration:[/mute] [primary]{snapshot.duration_ms}ms[/primary]")
         if snapshot.errors:
-            self.console.print("[bold red]Errors:[/bold red]")
+            self.console.print("[bold danger]Errors:[/bold danger]")
             for err in snapshot.errors:
-                self.console.print(f" - {err.error_type}: {err.core_message}")
+                self.console.print(f" [border]-[/border] [danger]{err.error_type}:[/danger] [primary]{err.core_message}[/primary]")
 
     def display_result(self, result: TaskResult) -> None:
-        title = "[bold green]✅ SUCCESS[/bold green]" if result.success else "[bold red]❌ FAILED[/bold red]"
+        if result.success:
+            title = "[bold success][+] SUCCESS[/bold success]"
+            border = "success"
+        else:
+            title = "[bold danger][-] FAILED[/bold danger]"
+            border = "danger"
 
         content = (
-            f"Iterations: {result.iterations}\\n"
-            f"Tokens: {result.total_tokens}\\n"
-            f"Cost: ${result.total_cost_usd:.4f}\\n"
-            f"Files Created: {len(result.files_created)}\\n"
-            f"Files Modified: {len(result.files_modified)}\\n"
-            f"Summary: {result.summary}\\n"
-            f"Reason: {result.reason}"
+            f"[mute]Iterations:[/mute] [primary]{result.iterations}[/primary]\\n"
+            f"[mute]Tokens:[/mute] [primary]{result.total_tokens}[/primary]\\n"
+            f"[mute]Cost:[/mute] [primary]${result.total_cost_usd:.4f}[/primary]\\n"
+            f"[mute]Files Created:[/mute] [primary]{len(result.files_created)}[/primary]\\n"
+            f"[mute]Files Modified:[/mute] [primary]{len(result.files_modified)}[/primary]\\n"
+            f"[mute]Summary:[/mute] [primary]{result.summary}[/primary]\\n"
+            f"[mute]Reason:[/mute] [primary]{result.reason}[/primary]"
         )
-        self.console.print(Panel(content, title=title))
+        self.console.print(Panel(content, title=title, border_style=border))
 
     def display_error(self, error: str) -> None:
-        self.console.print(Panel(error, title="[bold red]Error[/bold red]", border_style="red"))
+        self.console.print(Panel(f"[primary]{error}[/primary]", title="[bold danger][x] Error[/bold danger]", border_style="danger"))
