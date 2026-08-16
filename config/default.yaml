@@ -1,0 +1,19 @@
+agent:
+  max_iterations: 10
+  max_consecutive_failures: 3
+  progress_window: 3
+  min_progress_score: 0.1
+  max_cost_per_task_usd: 0.50
+  max_tokens_per_task: 100000
+  context_compaction_threshold: 0.6
+  idle_timeout_seconds: 300
+sandbox:
+  image: "python:3.11-slim"
+  memory_limit: "512m"
+  cpu_quota: 50000
+  timeout_seconds: 120
+  network_mode: "none"
+models:
+  strong: "gemini/gemini-2.5-flash"
+  fast: "gemini/gemini-2.0-flash"
+  embedding: "all-MiniLM-L6-v2"
