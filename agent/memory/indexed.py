@@ -2,7 +2,7 @@ import re
 import sqlite3
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 
 from pydantic import BaseModel, Field
@@ -17,7 +17,7 @@ class MemoryEntry(BaseModel):
     category: str
     project: str = "default"
     task_id: str = ""
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 
 class IndexedMemory:
@@ -169,7 +169,7 @@ class IndexedMemory:
                 try:
                     ts = datetime.fromisoformat(ts_str)
                 except ValueError:
-                    ts = datetime.utcnow()
+                    ts = datetime.now(timezone.utc)
 
                 entries.append(MemoryEntry(
                     content=content,

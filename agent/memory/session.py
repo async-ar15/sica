@@ -3,9 +3,10 @@ import os
 import platform
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import StrEnum
 from pathlib import Path
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -22,7 +23,7 @@ class CheckpointData(BaseModel):
     current_hypothesis: str = ""
     tried_hypotheses: list[str] = Field(default_factory=list)
     task_id: str = ""
-    timestamp: datetime = Field(default_factory=datetime.utcnow)
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
 
 class MemoryCategory(StrEnum):
     """Categories for MEMORY.md entries."""
@@ -43,8 +44,8 @@ def file_lock(path: Path) -> Generator[None, None, None]:
                 import msvcrt
                 msvcrt.locking(f.fileno(), msvcrt.LK_LOCK, 1)
             else:
-                import fcntl
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                import fcntl  # pyright: ignore[reportMissingImports]
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)  # type: ignore
             yield
         finally:
             try:
@@ -53,8 +54,8 @@ def file_lock(path: Path) -> Generator[None, None, None]:
                     f.seek(0)
                     msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
                 else:
-                    import fcntl
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    import fcntl  # pyright: ignore[reportMissingImports]
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)  # type: ignore
             except OSError:
                 pass
 
@@ -97,7 +98,7 @@ class SessionMemory:
         """Appends a fact under the correct section header in MEMORY.md."""
         content = self.read_memory()
 
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         fact_line = f"- [{category.value}] {fact} (from task: {source_task}, {timestamp})"
 
         header = f"## {category.value.capitalize()}"
@@ -169,7 +170,7 @@ class SessionMemory:
         content = self.checkpoint_file.read_text(encoding="utf-8")
 
         try:
-            data_dict = {}
+            data_dict: dict[str, Any] = {}
             lines = content.splitlines()
             for line in lines:
                 if line.startswith("## Version: "):
@@ -231,7 +232,7 @@ class SessionMemory:
     def create_task_log(self, task_id: str, goal: str) -> None:
         """Creates a new task log file."""
         log_file = self.task_logs_dir / f"{task_id}.md"
-        timestamp = datetime.utcnow().isoformat()
+        timestamp = datetime.now(timezone.utc).isoformat()
         content = f"# Task: {task_id}\n## Goal: {goal}\n## Started: {timestamp}\n"
         self._atomic_write(log_file, content)
 
