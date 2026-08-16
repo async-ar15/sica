@@ -83,7 +83,10 @@ class WorkingMemory:
             # show up to last 3
             recent = list(self.iteration_history)[-3:]
             for r in recent:
-                parts.append(f"  - Iteration {r.iteration}: {r.hypothesis} -> tokens: {r.tokens_used}")
+                parts.append(
+                    f"  - Iteration {r.iteration}: {r.hypothesis} "
+                    f"-> tokens: {r.tokens_used}"
+                )
 
         if self.active_errors:
             parts.append("Active Errors:")
