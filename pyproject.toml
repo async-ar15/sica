@@ -20,6 +20,9 @@ dependencies = [
 [project.scripts]
 agent = "ui.cli:app"
 
+[tool.setuptools.packages.find]
+include = ["agent*", "providers*", "ui*"]
+
 [dependency-groups]
 dev = [
     "mypy>=1.10",

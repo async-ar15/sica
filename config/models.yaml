@@ -1,19 +1,19 @@
 routing:
-  planning: "gemini/gemini-2.5-flash"
-  fault_localization: "gemini/gemini-2.5-flash"
-  reflection: "gemini/gemini-2.5-flash"
-  architect: "gemini/gemini-2.5-flash"
-  judge_review: "gemini/gemini-2.5-flash"
-  coding: "gemini/gemini-2.0-flash"
-  editor: "gemini/gemini-2.0-flash"
-  context_compaction: "gemini/gemini-2.0-flash"
-  memory_reranking: "gemini/gemini-2.0-flash"
-  dream_maintenance: "gemini/gemini-2.0-flash"
-  lint_fix: "gemini/gemini-2.0-flash"
+  planning: "gemini/gemini-3.6-flash"
+  fault_localization: "gemini/gemini-3.6-flash"
+  reflection: "gemini/gemini-3.6-flash"
+  architect: "gemini/gemini-3.6-flash"
+  judge_review: "gemini/gemini-3.6-flash"
+  coding: "gemini/gemini-3.5-flash-lite"
+  editor: "gemini/gemini-3.5-flash-lite"
+  context_compaction: "gemini/gemini-3.5-flash-lite"
+  memory_reranking: "gemini/gemini-3.5-flash-lite"
+  dream_maintenance: "gemini/gemini-3.5-flash-lite"
+  lint_fix: "gemini/gemini-3.5-flash-lite"
 cost_per_million_tokens:
-  "gemini/gemini-2.5-flash":
+  "gemini/gemini-3.6-flash":
     input: 0.15
     output: 0.60
-  "gemini/gemini-2.0-flash":
+  "gemini/gemini-3.5-flash-lite":
     input: 0.075
     output: 0.30

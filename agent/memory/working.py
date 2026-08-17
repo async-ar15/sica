@@ -38,6 +38,8 @@ class WorkingMemory:
         self.iteration_history: deque[IterationSnapshot] = deque(maxlen=10)
         self.active_errors: list[ErrorSignature] = []
         self.tried_hypotheses: set[str] = set()
+        self.current_hypothesis: str = ""
+        self.last_error: str | None = None
         self.repo_map: str = ""
         self.relevant_memories: list[str] = []
 
@@ -62,6 +64,8 @@ class WorkingMemory:
         self.iteration_history.clear()
         self.active_errors.clear()
         self.tried_hypotheses.clear()
+        self.current_hypothesis = ""
+        self.last_error = None
         self.repo_map = ""
         self.relevant_memories.clear()
 

@@ -4,8 +4,15 @@ from typing import Any
 from agent.core.circuit_breaker import BreakerState, CircuitBreaker
 from agent.core.context_manager import ContextManager
 from agent.core.state_machine import AgentState, StateMachine
+from agent.memory.failure import FailureMemory, FailureRecord
+from agent.memory.indexed import IndexedMemory
+from agent.memory.session import CheckpointData, MemoryCategory, SessionMemory
 from agent.memory.working import IterationSnapshot, WorkingMemory
+from agent.reflection.engine import Hypothesis, ReflectionEngine
+from agent.safety.static_analysis import StaticAnalyzer
 from agent.tools.aci import ToolRegistry
+from agent.tools.fault_localizer import FaultLocalizer
+from agent.tools.repo_map import RepoMap
 from agent.tools.sandbox import DockerSandbox
 from ui.display import StatusDisplay, TaskResult
 
@@ -19,6 +26,13 @@ class AgentHarness:
         fsm: StateMachine,
         circuit_breaker: CircuitBreaker,
         memory: WorkingMemory,
+        session_memory: SessionMemory,
+        indexed_memory: IndexedMemory,
+        failure_memory: FailureMemory,
+        reflection_engine: ReflectionEngine,
+        repo_map: RepoMap,
+        fault_localizer: FaultLocalizer,
+        static_analyzer: StaticAnalyzer,
         display: StatusDisplay,
         trajectory: Any | None = None
     ) -> None:
@@ -28,20 +42,40 @@ class AgentHarness:
         self.fsm = fsm
         self.circuit_breaker = circuit_breaker
         self.memory = memory
+        self.session_memory = session_memory
+        self.indexed_memory = indexed_memory
+        self.failure_memory = failure_memory
+        self.reflection_engine = reflection_engine
+        self.repo_map = repo_map
+        self.fault_localizer = fault_localizer
+        self.static_analyzer = static_analyzer
         self.display = display
         self.trajectory = trajectory
         self.context_manager = ContextManager()
 
     async def run(self, goal: str) -> TaskResult:
-        self.memory.reset()
-        self.memory.current_goal = goal
+        task_id = self.trajectory.task_id if self.trajectory else f"task_{int(time.time())}"
 
-        iteration = 0
+        checkpoint = self.session_memory.load_checkpoint()
+        if checkpoint and checkpoint.current_goal == goal:
+            self.display.display_message(f"📋 Resuming from iteration {checkpoint.iteration_count}, state: {checkpoint.current_state}...")
+            self.memory.current_goal = checkpoint.current_goal
+            self.fsm.state = AgentState(checkpoint.current_state)
+            iteration = checkpoint.iteration_count
+            self.memory.current_hypothesis = checkpoint.current_hypothesis
+            self.memory.tried_hypotheses = set(checkpoint.tried_hypotheses)
+            if checkpoint.last_error:
+                self.memory.last_error = checkpoint.last_error
+        else:
+            self.memory.reset()
+            self.memory.current_goal = goal
+            iteration = 0
+            await self.fsm.transition("goal_received_greenfield", iteration_count=iteration)
+            self.session_memory.create_task_log(task_id, goal)
+
         total_tokens = 0
         total_cost = 0.0
         start_time = time.time()
-
-        await self.fsm.transition("start")
 
         while self.fsm.state not in (AgentState.COMPLETED, AgentState.FAILED):
             iteration += 1
@@ -51,6 +85,7 @@ class AgentHarness:
             b_state = BreakerState(iteration_count=iteration)
             trip = self.circuit_breaker.check(b_state)
             if trip:
+                self.session_memory.clear_checkpoint()
                 return TaskResult(
                     success=False,
                     reason=f"Circuit Breaker tripped: {trip}",
@@ -74,7 +109,7 @@ class AgentHarness:
 
             try:
                 # In a real run, we'd parse tool calls from response
-                llm_response = await self.llm.generate(messages=messages, tools=self.tools.get_tool_definitions())
+                llm_response = await self.llm.complete(task_type="planning", messages=messages)
 
                 # Mock processing for Phase 1.9 to prevent infinite loops if LLM doesn't do what we want
                 # We will force a completed state for testing purposes if goal is "test"
@@ -82,22 +117,54 @@ class AgentHarness:
                     self.fsm.state = AgentState.COMPLETED
                     break
 
+                # Phase 2 logic:
                 if self.fsm.state == AgentState.LOCALIZING:
-                    await self.fsm.transition("plan_ready")
+                    if self.memory.current_hypothesis:
+                        # Dummy hypothesis object for localization
+                        hypo = Hypothesis(
+                            description=self.memory.current_hypothesis,
+                            action_plan="Fix error",
+                            confidence=1.0
+                        )
+                        await self.fault_localizer.localize(
+                            hypothesis=hypo,
+                            traceback=self.memory.last_error or "",
+                            current_state=str(self.fsm.state)
+                        )
+                    await self.fsm.transition("locations_found", iteration_count=iteration)
                 elif self.fsm.state == AgentState.PLANNING:
-                    await self.fsm.transition("plan_approved")
+                    await self.fsm.transition("plan_ready", iteration_count=iteration)
                 elif self.fsm.state == AgentState.CODING:
-                    await self.fsm.transition("code_written")
+                    await self.fsm.transition("code_ready", iteration_count=iteration)
+                elif self.fsm.state == AgentState.ANALYZING:
+                    # In a real system, we'd pass files modified during coding
+                    await self.static_analyzer.analyze(["agent/core/harness.py"])
+                    await self.fsm.transition("analysis_pass", iteration_count=iteration)
                 elif self.fsm.state == AgentState.TESTING:
-                    await self.fsm.transition("tests_passed")
+                    await self.fsm.transition("tests_pass", iteration_count=iteration)
                 elif self.fsm.state == AgentState.REFLECTING:
-                    await self.fsm.transition("task_done")
+                    hypo = await self.reflection_engine.reflect(
+                        traceback=self.memory.last_error or "Unknown error",
+                        current_state=str(self.fsm.state),
+                        tried_hypotheses=list(self.memory.tried_hypotheses)
+                    )
+                    self.memory.current_hypothesis = hypo.description
+                    self.memory.tried_hypotheses.add(hypo.description)
+                    await self.fsm.transition("hypothesis_ready", iteration_count=iteration)
 
                 total_tokens += getattr(llm_response, "total_tokens", 100)
 
             except Exception as e:
                 self.display.display_error(f"LLM Error: {e}")
-                await self.fsm.transition("error")
+                self.fsm.state = AgentState.FAILED
+                self.memory.last_error = str(e)
+                # Log terminal failure
+                self.failure_memory.record_failure(FailureRecord(
+                    error_signature=str(e)[:100],
+                    goal=self.memory.current_goal or goal,
+                    hypothesis=self.memory.current_hypothesis or "None",
+                    result="Terminal failure"
+                ))
                 break
 
             # 3. Record Iteration
@@ -110,7 +177,23 @@ class AgentHarness:
             )
             self.memory.record_iteration(snap)
             self.display.display_iteration(snap)
-            
+
+            # Save Checkpoint
+            chk_data = CheckpointData(
+                current_goal=self.memory.current_goal or goal,
+                current_state=str(self.fsm.state),
+                iteration_count=iteration,
+                last_error=self.memory.last_error,
+                current_hypothesis=self.memory.current_hypothesis,
+                tried_hypotheses=list(self.memory.tried_hypotheses),
+                task_id=task_id
+            )
+            self.session_memory.save_checkpoint(chk_data)
+
+            # Append Task Log
+            log_msg = f"State: {self.fsm.state}\nTokens Used: {getattr(llm_response, 'total_tokens', 100) if 'llm_response' in locals() else 0}\nDuration: {duration}ms\n"
+            self.session_memory.append_to_task_log(task_id, iteration, log_msg)
+
             if self.trajectory:
                 from agent.core.trajectory import TrajectoryStep
                 self.trajectory.log_step(TrajectoryStep(
@@ -121,6 +204,25 @@ class AgentHarness:
                 ))
 
         success = self.fsm.state == AgentState.COMPLETED
+        self.session_memory.clear_checkpoint()
+        if success:
+            self.session_memory.append_fact(
+                f"Successfully completed task: {goal}",
+                MemoryCategory.FACT,
+                task_id
+            )
+            # Index the task log
+            self.indexed_memory.reindex_from_markdown(self.session_memory)
+
+            # Record successful pattern if we had an error previously
+            if self.memory.last_error and self.memory.current_hypothesis:
+                self.failure_memory.record_failure(FailureRecord(
+                    error_signature=self.memory.last_error[:100],
+                    goal=self.memory.current_goal or goal,
+                    hypothesis=self.memory.current_hypothesis,
+                    result="SUCCESS: Pattern resolved error"
+                ))
+
         return TaskResult(
             success=success,
             goal=goal,

@@ -1,5 +1,9 @@
-import asyncio
 import sys
+
+if sys.platform == "win32" and hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8")
+
+import asyncio
 
 import typer
 import yaml
@@ -10,8 +14,16 @@ from rich.table import Table
 from agent.core.circuit_breaker import CircuitBreaker, CircuitBreakerConfig
 from agent.core.harness import AgentHarness
 from agent.core.state_machine import StateMachine
+from agent.memory.failure import FailureMemory
+from agent.memory.indexed import IndexedMemory
+from agent.memory.session import SessionMemory
 from agent.memory.working import WorkingMemory
-from agent.tools.aci import ToolRegistry
+from agent.reflection.engine import ReflectionEngine
+from agent.safety.permissions import PermissionGate
+from agent.safety.static_analysis import StaticAnalyzer
+from agent.tools.aci import AgentMode, ToolRegistry
+from agent.tools.fault_localizer import FaultLocalizer
+from agent.tools.repo_map import RepoMap
 from agent.tools.sandbox import DockerSandbox
 from providers.llm import LLMProvider
 from ui.display import StatusDisplay
@@ -34,7 +46,21 @@ def run(goal: str, mode: str = "build", max_iterations: int = 10, verbose: bool 
 
     llm = LLMProvider()
     memory = WorkingMemory()
-    tools = ToolRegistry(sandbox=sandbox, working_memory=memory)
+    session_memory = SessionMemory()
+    indexed_memory = IndexedMemory()
+    failure_memory = FailureMemory()
+    reflection_engine = ReflectionEngine(llm=llm, failure_memory=failure_memory)
+    repo_map = RepoMap(".")
+    fault_localizer = FaultLocalizer(llm=llm, repo_map=repo_map)
+    static_analyzer = StaticAnalyzer(sandbox=sandbox)
+    try:
+        agent_mode = AgentMode(mode.lower())
+    except ValueError:
+        console.print(f"[bold yellow]Warning:[/bold yellow] Invalid mode '{mode}', defaulting to 'plan'")
+        agent_mode = AgentMode.PLAN
+
+    permission_gate = PermissionGate(default_mode=agent_mode)
+    tools = ToolRegistry(sandbox=sandbox, working_memory=memory, permission_gate=permission_gate)
     fsm = StateMachine()
     circuit_breaker = CircuitBreaker(CircuitBreakerConfig(max_iterations=max_iterations))
 
@@ -52,6 +78,13 @@ def run(goal: str, mode: str = "build", max_iterations: int = 10, verbose: bool 
         fsm=fsm,
         circuit_breaker=circuit_breaker,
         memory=memory,
+        session_memory=session_memory,
+        indexed_memory=indexed_memory,
+        failure_memory=failure_memory,
+        reflection_engine=reflection_engine,
+        repo_map=repo_map,
+        fault_localizer=fault_localizer,
+        static_analyzer=static_analyzer,
         display=display,
         trajectory=trajectory
     )

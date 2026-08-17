@@ -51,7 +51,7 @@ class EmbeddingProvider:
             # Output is a numpy array
             import typing
             result = model.encode(text)
-            return typing.cast(list[float], result.tolist())
+            return typing.cast("list[float]", result.tolist())
         except Exception as e:
             logger.error(f"Embedding failed: {e}")
             return []

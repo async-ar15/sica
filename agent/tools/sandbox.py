@@ -127,9 +127,10 @@ class DockerSandbox:
             try:
                 result = container.wait(timeout=self.config.timeout_seconds)
                 exit_code = result["StatusCode"]
-                stdout_bytes, stderr_bytes = container.logs(stdout=True, stderr=True, demux=True)  # type: ignore
-                stdout = stdout_bytes.decode("utf-8", errors="replace") if stdout_bytes else ""
-                stderr = stderr_bytes.decode("utf-8", errors="replace") if stderr_bytes else ""
+                logs = container.logs(stdout=True, stderr=True)
+                # Without demux, logs is just a single bytes object with everything.
+                stdout = logs.decode("utf-8", errors="replace") if logs else ""
+                stderr = ""
 
                 container.reload()
                 oom_killed = container.attrs.get("State", {}).get("OOMKilled", False)
@@ -190,8 +191,8 @@ class DockerSandbox:
                 detach=True,
             )
             result = container.wait(timeout=self.config.timeout_seconds)
-            stdout_bytes, _ = container.logs(stdout=True, stderr=True, demux=True)  # type: ignore
-            raw_output = stdout_bytes.decode("utf-8", errors="replace") if stdout_bytes else ""
+            logs = container.logs(stdout=True, stderr=True)
+            raw_output = logs.decode("utf-8", errors="replace") if logs else ""
             exit_code = result["StatusCode"]
 
             return TestResult(

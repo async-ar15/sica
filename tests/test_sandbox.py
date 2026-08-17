@@ -1,8 +1,11 @@
+from collections.abc import Generator
+from unittest.mock import MagicMock, patch
+
 import pytest
-from typing import Any, Generator
-from unittest.mock import patch, MagicMock
-from agent.tools.sandbox import DockerSandbox, SandboxConfig, DockerUnavailableError
 import requests
+
+from agent.tools.sandbox import DockerSandbox, DockerUnavailableError, SandboxConfig
+
 
 @pytest.fixture
 def mock_docker() -> Generator[MagicMock, None, None]:
@@ -26,7 +29,7 @@ def test_sandbox_init_fallback(monkeypatch: pytest.MonkeyPatch) -> None:
 async def test_execute_happy_path(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DOCKER_ENABLED", "true")
     sandbox = DockerSandbox(SandboxConfig())
-    
+
     mock_container = MagicMock()
     mock_container.wait.return_value = {"StatusCode": 0}
     mock_container.logs.return_value = (b"hello world\n", b"")
@@ -34,7 +37,7 @@ async def test_execute_happy_path(mock_docker: MagicMock, monkeypatch: pytest.Mo
     mock_docker.containers.run.return_value = mock_container
 
     result = await sandbox.execute('print("hello world")')
-    
+
     assert result.exit_code == 0
     assert result.stdout == "hello world\n"
     assert result.stderr == ""
@@ -46,13 +49,13 @@ async def test_execute_happy_path(mock_docker: MagicMock, monkeypatch: pytest.Mo
 async def test_timeout_killed(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DOCKER_ENABLED", "true")
     sandbox = DockerSandbox(SandboxConfig())
-    
+
     mock_container = MagicMock()
     mock_container.wait.side_effect = requests.exceptions.ReadTimeout("Timeout")
     mock_docker.containers.run.return_value = mock_container
 
     result = await sandbox.execute("while True: pass")
-    
+
     assert result.timeout is True
     assert result.stderr == "Execution timed out."
     assert mock_container.remove.called
@@ -61,7 +64,7 @@ async def test_timeout_killed(mock_docker: MagicMock, monkeypatch: pytest.Monkey
 async def test_oom_killed(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DOCKER_ENABLED", "true")
     sandbox = DockerSandbox(SandboxConfig())
-    
+
     mock_container = MagicMock()
     mock_container.wait.return_value = {"StatusCode": 137}
     mock_container.logs.return_value = (b"", b"Killed")
@@ -69,19 +72,19 @@ async def test_oom_killed(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatc
     mock_docker.containers.run.return_value = mock_container
 
     result = await sandbox.execute("a = []\nwhile True: a.append(' ' * 10**6)")
-    
+
     assert result.oom_killed is True
     assert result.exit_code == 137
 
 def test_cleanup_orphans(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("DOCKER_ENABLED", "true")
     sandbox = DockerSandbox(SandboxConfig())
-    
+
     mock_c1 = MagicMock()
     mock_c2 = MagicMock()
     mock_docker.containers.list.return_value = [mock_c1, mock_c2]
-    
+
     sandbox.cleanup_orphans()
-    
+
     assert mock_c1.remove.called
     assert mock_c2.remove.called

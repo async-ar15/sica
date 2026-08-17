@@ -17,6 +17,7 @@ opencode_theme = Theme({
     "mute": "#9a9898",
     "border": "#646262",
     "primary": "#fdfcfc",
+    "primary_bold": "bold #fdfcfc",
 })
 
 class TaskResult(BaseModel):
@@ -37,7 +38,7 @@ class StatusDisplay:
         self.console = Console(theme=opencode_theme)
 
     def update(self, state: AgentState, iteration: int, max_iterations: int, tokens: int, cost: float, message: str) -> None:
-        table = Table(show_header=True, header_style="bold primary", border_style="border")
+        table = Table(show_header=True, header_style="primary_bold", border_style="border")
         table.add_column("State")
         table.add_column("Iteration")
         table.add_column("Tokens")
@@ -93,3 +94,6 @@ class StatusDisplay:
 
     def display_error(self, error: str) -> None:
         self.console.print(Panel(f"[primary]{error}[/primary]", title="[bold danger][x] Error[/bold danger]", border_style="danger"))
+
+    def display_message(self, message: str) -> None:
+        self.console.print(f"[bold info]{message}[/bold info]")

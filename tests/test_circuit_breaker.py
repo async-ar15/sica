@@ -78,6 +78,6 @@ def test_trip_on_file_error_limit() -> None:
     assert cb.check(BreakerState(iteration_count=1, file_error_counts={"app.py": 3})) == TripReason.FILE_ERROR_LIMIT
     # Multiple files, one over limit
     assert cb.check(BreakerState(
-        iteration_count=1, 
+        iteration_count=1,
         file_error_counts={"main.py": 1, "app.py": 4}
     )) == TripReason.FILE_ERROR_LIMIT

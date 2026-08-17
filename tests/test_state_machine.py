@@ -1,6 +1,9 @@
-import pytest
 import asyncio
-from agent.core.state_machine import StateMachine, AgentState, InvalidTransitionError
+
+import pytest
+
+from agent.core.state_machine import AgentState, InvalidTransitionError, StateMachine
+
 
 def test_initial_state_is_idle(fsm: StateMachine) -> None:
     assert fsm.current_state == AgentState.IDLE
