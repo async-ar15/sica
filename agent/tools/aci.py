@@ -1,7 +1,10 @@
 import os
 from enum import StrEnum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
+
+if TYPE_CHECKING:
+    from agent.safety.permissions import PermissionGate
 
 from pydantic import BaseModel
 
@@ -30,12 +33,17 @@ class ToolDefinition(BaseModel):
     required_params: list[str] = []
     allowed_modes: list[AgentMode]
 
+
 class ToolRegistry:
-    def __init__(self, sandbox: DockerSandbox, working_memory: WorkingMemory) -> None:
+    def __init__(self, sandbox: DockerSandbox, working_memory: WorkingMemory, permission_gate: "PermissionGate | None" = None) -> None:
         self.sandbox = sandbox
         self.working_memory = working_memory
-        from agent.safety.permissions import check_permission
-        self.check_permission = check_permission
+
+        if permission_gate is None:
+            from agent.safety.permissions import PermissionGate
+            self.permission_gate = PermissionGate()
+        else:
+            self.permission_gate = permission_gate
 
     def _view_file(self, path: str, start_line: int = 1, end_line: int = -1) -> ToolResult:
         try:
@@ -210,7 +218,7 @@ sys.exit(res.returncode)
             return ToolResult(success=False, error=str(e))
 
     async def execute(self, tool_name: str, params: dict[str, Any], mode: AgentMode) -> ToolResult:
-        if not self.check_permission(tool_name, mode):
+        if not self.permission_gate.check(tool_name, mode):
             return ToolResult(success=False, error=f"{tool_name} not allowed in {mode} mode")
 
         try:
