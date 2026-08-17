@@ -150,7 +150,39 @@ Contributions are welcome! SICA is built to be extensible. You can easily add:
 This project is licensed under the MIT License - see the LICENSE file for details.
 
 ## Status
-íº€ **Phase 3 Complete:** Multi-Agent Pipeline, Evaluation Harness, and Self-Improvement Engines are now fully integrated!
+ï¿½ï¿½ï¿½ **Phase 3 Complete:** Multi-Agent Pipeline, Evaluation Harness, and Self-Improvement Engines are now fully integrated!
 
 ## Quick Start
 Run the agent locally using: `uv run agent run "<your goal>"`
+
+
+
+# Engineering Solutions to the Autonomous Agent Challenge
+## Q: How does the agent enforce the "Plan â†’ Execute â†’ Test â†’ Reflect" loop safely?
+### A: We use a strict 8-State Finite State Machine (FSM) coordinated across specialized sub-agents:
+- The Architect plans tasks into a validated Directed Acyclic Graph (DAG).
+- The Worker executes tools and writes the code.
+- The Judge independently reviews the code to prevent confirmation bias.
+- The Circuit Breaker prevents infinite loops by strictly enforcing token limits, max iterations, and a live API budget tracker.
+- Session Checkpoints persist state to disk, allowing the agent to cleanly resume if interrupted (Ctrl+C).
+
+## Q: How do you guarantee safety when the agent executes its own code? 
+### A: We use a two-pronged approach of static prevention and dynamic isolation:
+- Static Analysis: Before execution, a native StaticAnalyzer runs ruff, mypy, and bandit to block syntax errors and unsafe operations.
+- Dynamic Isolation: Tests run inside a custom DockerSandbox using an ephemeral, non-root agent-sandbox container, completely insulating the host filesystem.
+
+## Q: How did you solve the context-bloat memory problem common in LLMs? 
+### A: We built a dedicated 4-Tiered Memory System:
+- Working Memory (RAM): Normalizes text to ensure the agent never retries a demonstrably failed hypothesis.
+- Session Memory (Markdown): Maintains persistent checkpoints of the current workflow.
+- Indexed Memory (SQLite FTS5): Provides fast, localized full-text search across project files.
+- Failure Memory (ChromaDB): Maps semantic error signatures to past successful fixes using dense vector embeddings.
+
+## Q: How does the agent "learn from mistakes" instead of just retrying blindly?  
+- Reflection Engine: When an error occurs, the agent queries ChromaDB for past semantic matches. It then generates 3 unique candidate patches (using diverse LLM temperature sampling), tests all three in the sandbox, and promotes the one with the highest test pass rate.
+- Skill Extraction: A background /distill engine sweeps successful task trajectories, uses algorithms to find overlapping tool patterns, and extracts reusable "Skills" as templates for future runs.
+
+## Q: How do you control what the agent is allowed to do? 
+- A: Permission Gate: The Agent-Computer Interface (ACI) strictly binds tool access to the current FSM state. For example, during the PLANNING state, destructive tools like edit_file or run_command are hard-blocked, restricting the agent to read-only investigative tools.
+
+
