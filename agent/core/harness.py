@@ -1,6 +1,9 @@
 import time
 from typing import Any
 
+from agent.agents.architect import ArchitectAgent
+from agent.agents.judge import JudgeAgent
+from agent.agents.worker import WorkerAgent
 from agent.core.circuit_breaker import BreakerState, CircuitBreaker
 from agent.core.context_manager import ContextManager
 from agent.core.state_machine import AgentState, StateMachine
@@ -52,6 +55,10 @@ class AgentHarness:
         self.display = display
         self.trajectory = trajectory
         self.context_manager = ContextManager()
+        self.architect = ArchitectAgent(self.llm, self.repo_map, self.failure_memory)
+        self.worker = WorkerAgent(self.llm, self.tools)
+        self.judge = JudgeAgent(self.llm)
+        self.active_dag = None
 
     async def run(self, goal: str) -> TaskResult:
         task_id = self.trajectory.task_id if self.trajectory else f"task_{int(time.time())}"
@@ -133,8 +140,29 @@ class AgentHarness:
                         )
                     await self.fsm.transition("locations_found", iteration_count=iteration)
                 elif self.fsm.state == AgentState.PLANNING:
+                    memories = []
+                    self.active_dag = await self.architect.plan(
+                        goal=self.memory.current_goal or goal,
+                        repo_map_str=str(self.repo_map),
+                        memories=memories,
+                        fault_locations=None
+                    )
                     await self.fsm.transition("plan_ready", iteration_count=iteration)
                 elif self.fsm.state == AgentState.CODING:
+                    if self.active_dag:
+                        ready_tasks = self.active_dag.get_ready_tasks()
+
+                        for task in ready_tasks:
+                            result = await self.worker.execute(task, context=str(self.active_dag.model_dump()))
+                            verdict = await self.judge.review(result, task, tests_exist=True)
+                            overrides = 0
+                            while not verdict.approved and verdict.confidence > 0.7 and overrides < 2:
+                                result = await self.worker.revise(result, verdict)
+                                verdict = await self.judge.review(result, task, tests_exist=True)
+                                overrides += 1
+
+                            self.active_dag.mark_done(task.task_id, result.model_dump())
+
                     await self.fsm.transition("code_ready", iteration_count=iteration)
                 elif self.fsm.state == AgentState.ANALYZING:
                     # In a real system, we'd pass files modified during coding
