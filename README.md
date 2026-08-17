@@ -92,7 +92,7 @@ SICA operates on a continuous feedback loop:
 4. **Reflect**: If tests fail, the Reflection Engine determines *why* and searches its Vector Memory to see if this error was solved before.
 5. **Fix**: The Fault Localizer pinpoints the error, and the Fix Searcher proposes multiple fixes to get tests passing.
 
-## 📊 Evaluation Results
+## Evaluation Results
 
 | Difficulty | Tasks Solved | Solve Rate | Avg Iterations | Avg Cost |
 |------------|--------------|------------|----------------|----------|
