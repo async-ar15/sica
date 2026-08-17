@@ -6,7 +6,7 @@
 
 SICA is a fully autonomous coding agent that plans, writes, tests, and fixes code. What makes SICA unique is its ability to learn over time: it remembers past failures, extracts reusable skills from successes, and applies this knowledge to solve future problems faster and cheaper.
 
-## 🏗 Architecture
+## Architecture
 
 ```mermaid
 graph TD
@@ -46,7 +46,7 @@ graph TD
     Worker --> TR
 ```
 
-## ✨ Key Features
+## Key Features
 
 - **8-state FSM orchestration**: Idle → Planning → Coding → Testing → Reflecting → Localizing → Searching → Completed
 - **Architect/Worker/Judge multi-agent pipeline**: Dedicated roles for system design, implementation, and quality assurance
@@ -59,7 +59,7 @@ graph TD
 - **Context compaction at 60% utilization**: Keeps LLM context windows efficient by selectively summarizing history
 - **BYOK model support via LiteLLM**: Swap between Gemini, Claude, OpenAI, and more
 
-## 🚀 Quick Start
+## Quick Start
 
 1. Clone the repository:
    ```bash
@@ -83,7 +83,7 @@ graph TD
    uv run agent run "Create a python script that checks for prime numbers and writes tests for it"
    ```
 
-## 🧠 How It Works
+## How It Works
 
 SICA operates on a continuous feedback loop:
 1. **Plan**: The Architect analyzes the goal and repo map to generate an implementation plan.
@@ -102,7 +102,7 @@ SICA operates on a continuous feedback loop:
 
 *Note: These are preliminary benchmark metrics based on the internal eval harness.*
 
-## 🥊 Comparison
+## Comparison
 
 | Feature | SICA | Devin | SWE-Agent | Claude Code |
 |---------|------|-------|-----------|-------------|
@@ -131,20 +131,20 @@ mcp_servers:
   # Add Model Context Protocol servers here
 ```
 
-## 🏗 Architecture Deep Dive
+## Architecture Deep Dive
 
 - **FSM Orchestrator**: The backbone of the agent, ensuring it doesn't get stuck in a "coding" loop without testing or reflecting.
 - **Agent Roles**: The Architect thinks big picture (files, dependencies), the Worker executes specific edits, and the Judge provides objective critique.
 - **Memory Subsystem**: Vector DB (Chroma) stores high-level concepts and failure/fix pairs. Indexed DB (SQLite/FTS5) stores specific facts and API signatures.
 - **Trajectory Logger**: Every action, API call, and tool result is logged to a JSONL file, which can be replayed or exported to Markdown for debugging.
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! SICA is built to be extensible. You can easily add:
 - New tools (implement `ToolDefinition` and add to `ToolRegistry`)
 - New eval tasks (drop a YAML file in `eval/tasks/`)
 - New memory backends (implement the `MemoryProvider` interface)
 
-## 📄 License
+## License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
