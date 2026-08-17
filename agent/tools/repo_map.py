@@ -22,7 +22,7 @@ class RepoMap:
         for root, dirs, files in os.walk(self.repo_path):
             # Skip common hidden and environment directories
             dirs[:] = [
-                d for d in dirs 
+                d for d in dirs
                 if not d.startswith(".") and d not in ("__pycache__", "venv", ".venv", "env")
             ]
 
