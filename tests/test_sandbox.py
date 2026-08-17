@@ -32,7 +32,7 @@ async def test_execute_happy_path(mock_docker: MagicMock, monkeypatch: pytest.Mo
 
     mock_container = MagicMock()
     mock_container.wait.return_value = {"StatusCode": 0}
-    mock_container.logs.return_value = (b"hello world\n", b"")
+    mock_container.logs.return_value = b"hello world\n"
     mock_container.attrs = {"State": {"OOMKilled": False}}
     mock_docker.containers.run.return_value = mock_container
 
@@ -67,7 +67,7 @@ async def test_oom_killed(mock_docker: MagicMock, monkeypatch: pytest.MonkeyPatc
 
     mock_container = MagicMock()
     mock_container.wait.return_value = {"StatusCode": 137}
-    mock_container.logs.return_value = (b"", b"Killed")
+    mock_container.logs.return_value = b"Killed"
     mock_container.attrs = {"State": {"OOMKilled": True}}
     mock_docker.containers.run.return_value = mock_container
 

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import os
 from enum import StrEnum
 from pathlib import Path
@@ -44,6 +45,14 @@ class ToolRegistry:
             self.permission_gate = PermissionGate()
         else:
             self.permission_gate = permission_gate
+
+        self.dynamic_tools = {}
+        self.mcp_handlers = {}
+
+    def register_mcp_tool(self, schema: dict[str, Any], handler: Any) -> None:
+        name = schema["function"]["name"]
+        self.dynamic_tools[name] = schema
+        self.mcp_handlers[name] = handler
 
     def _view_file(self, path: str, start_line: int = 1, end_line: int = -1) -> ToolResult:
         try:
@@ -236,6 +245,17 @@ sys.exit(res.returncode)
                 return await self._run_tests(**params)
             elif tool_name == "remember":
                 return self._remember(**params)
+            elif tool_name in self.dynamic_tools:
+                try:
+                    import inspect
+                    handler = self.mcp_handlers[tool_name]
+                    if inspect.iscoroutinefunction(handler):
+                        res = await handler(tool_name, params)
+                    else:
+                        res = handler(tool_name, params)
+                    return ToolResult(success=True, output=str(res))
+                except Exception as e:
+                    return ToolResult(success=False, error=str(e))
             else:
                 return ToolResult(success=False, error=f"Unknown tool: {tool_name}")
         except Exception as e:

@@ -1,6 +1,6 @@
 from unittest.mock import MagicMock, patch
 
-import litellm
+import litellm  # pyright: ignore[reportMissingImports]
 import pytest
 from httpx import Request, Response
 

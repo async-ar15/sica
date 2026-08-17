@@ -32,6 +32,14 @@ class PermissionGate:
         self._current_mode = new_mode
         # In the future, log mode switch to trajectory
 
+    def allow_in_build_only(self, tool_name: str) -> None:
+        """Register a dynamic tool to be allowed only in BUILD mode."""
+        self.PERMISSION_MATRIX[tool_name] = {
+            AgentMode.PLAN: False,
+            AgentMode.BUILD: True,
+            AgentMode.REVIEW: False
+        }
+
     @property
     def current_mode(self) -> AgentMode:
         return self._current_mode

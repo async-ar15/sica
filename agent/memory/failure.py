@@ -127,3 +127,36 @@ class FailureMemory:
         except Exception as e:
             logger.error(f"Failed to search similar errors in Chroma: {e}")
             return []
+
+    def prune(self, max_age_days: int = 30) -> int:
+        """Removes failures older than max_age_days from ChromaDB."""
+        if not self.enabled or self.collection is None:
+            return 0
+
+        try:
+            # ChromaDB doesn't support complex where clauses like < timestamp string easily without metadata filtering
+            # We can get all, filter, and delete.
+            results = self.collection.get(include=["metadatas"])
+            if not results or not results["ids"]:
+                return 0
+
+            now = datetime.now(UTC)
+            to_delete = []
+
+            for doc_id, metadata in zip(results["ids"], results["metadatas"], strict=False):
+                if metadata and "timestamp" in metadata:
+                    try:
+                        ts = datetime.fromisoformat(metadata["timestamp"])
+                        if (now - ts).days > max_age_days:
+                            to_delete.append(doc_id)
+                    except Exception:
+                        pass
+
+            if to_delete:
+                self.collection.delete(ids=to_delete)
+                return len(to_delete)
+
+            return 0
+        except Exception as e:
+            logger.error(f"Failed to prune failures from Chroma: {e}")
+            return 0

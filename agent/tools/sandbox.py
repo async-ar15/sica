@@ -67,6 +67,26 @@ class DockerSandbox:
             try:
                 self.client = docker.from_env()  # type: ignore[attr-defined]
                 self.client.ping()
+
+                # Auto-build sandbox image if not exists
+                if self.config.image == "python:3.11-slim":
+                    self.config.image = "agent-sandbox"
+
+                try:
+                    self.client.images.get(self.config.image)
+                except docker.errors.ImageNotFound:  # type: ignore
+                    print(f"Building {self.config.image} from docker/Dockerfile.sandbox...")
+                    try:
+                        self.client.images.build(
+                            path=".",
+                            dockerfile="docker/Dockerfile.sandbox",
+                            tag=self.config.image,
+                            rm=True
+                        )
+                        print("Build successful.")
+                    except Exception as build_err:
+                        print(f"Failed to build custom image: {build_err}. Falling back to base image.")
+                        self.config.image = "python:3.11-slim"
             except Exception as e:
                 raise DockerUnavailableError(
                     "Docker daemon is not running or not accessible."
