@@ -97,3 +97,12 @@ class StatusDisplay:
 
     def display_message(self, message: str) -> None:
         self.console.print(f"[bold info]{message}[/bold info]")
+
+    import contextlib
+    @contextlib.contextmanager
+    def loading_state(self, message: str):
+        from rich.console import Console
+        # We use a separate local console for the status to not mess with the main one
+        c = Console()
+        with c.status(f"[bold info]{message}[/bold info]", spinner="dots"):
+            yield
