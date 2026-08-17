@@ -151,3 +151,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## Status
 íº€ **Phase 3 Complete:** Multi-Agent Pipeline, Evaluation Harness, and Self-Improvement Engines are now fully integrated!
+
+## Quick Start
+Run the agent locally using: `uv run agent run "<your goal>"`
