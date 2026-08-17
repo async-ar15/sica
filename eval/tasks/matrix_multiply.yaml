@@ -1,0 +1,10 @@
+description: Write matrix multiplication. Write comprehensive pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: matrix_multiply
+max_iterations: 5
+test_file: "def test_matrix_multiply():\n    from solution import matrix_multiply\n\
+  \    assert matrix_multiply([[1, 2], [3, 4]], [[2, 0], [1, 2]]) == [[4, 4], [10,\
+  \ 8]]\n"
+timeout_seconds: 60

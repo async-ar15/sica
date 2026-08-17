@@ -1,0 +1,9 @@
+description: Write a simple JSON key-value parser. Write comprehensive pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: json_parser
+max_iterations: 5
+test_file: "def test_json_parser():\n    from solution import parse_json\n    assert\
+  \ parse_json('{\"a\": 1}') == {'a': 1}\n"
+timeout_seconds: 60

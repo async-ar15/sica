@@ -1,0 +1,9 @@
+description: Write an LRU cache with O(1) operations. Write comprehensive pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: lru_cache
+max_iterations: 5
+test_file: "def test_lru_cache():\n    from solution import LRUCache\n    cache =\
+  \ LRUCache(2)\n    cache.put(1, 1)\n    assert cache.get(1) == 1\n"
+timeout_seconds: 60

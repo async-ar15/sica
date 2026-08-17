@@ -1,0 +1,10 @@
+description: Write a Python function called 'count_vowels' that counts vowels in a
+  string. Write comprehensive pytest tests.
+difficulty: easy
+expected_files:
+- solution.py
+id: count_vowels
+max_iterations: 3
+test_file: "def test_count_vowels():\n    from solution import count_vowels\n    assert\
+  \ count_vowels('hello') == 2\n"
+timeout_seconds: 30

@@ -1,0 +1,10 @@
+description: Write a Python function called 'add_numbers' that adds two numbers. Write
+  comprehensive pytest tests.
+difficulty: easy
+expected_files:
+- solution.py
+id: add_numbers
+max_iterations: 3
+test_file: "def test_add_numbers():\n    from solution import add_numbers\n    assert\
+  \ add_numbers(1, 2) == 3\n"
+timeout_seconds: 30

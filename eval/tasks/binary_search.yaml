@@ -1,0 +1,10 @@
+description: Write binary search with edge case handling. Write comprehensive pytest
+  tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: binary_search
+max_iterations: 5
+test_file: "def test_binary_search():\n    from solution import binary_search\n  \
+  \  assert binary_search([1, 2, 3, 4], 3) == 2\n"
+timeout_seconds: 60

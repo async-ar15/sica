@@ -1,0 +1,9 @@
+description: Write a token bucket rate limiter. Write comprehensive pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: rate_limiter
+max_iterations: 5
+test_file: "def test_rate_limiter():\n    from solution import RateLimiter\n    rl\
+  \ = RateLimiter(1, 1)\n    assert rl.allow() is True\n"
+timeout_seconds: 60

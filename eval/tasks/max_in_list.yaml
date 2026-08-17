@@ -1,0 +1,10 @@
+description: Write a Python function called 'max_in_list' that finds the maximum in
+  a list. Write comprehensive pytest tests.
+difficulty: easy
+expected_files:
+- solution.py
+id: max_in_list
+max_iterations: 3
+test_file: "def test_max_in_list():\n    from solution import max_in_list\n    assert\
+  \ max_in_list([1, 2, 3]) == 3\n"
+timeout_seconds: 30

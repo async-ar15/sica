@@ -1,0 +1,10 @@
+description: Write a REST API with CRUD endpoints (using Flask). Write comprehensive
+  pytest tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: rest_api
+max_iterations: 10
+test_file: "def test_rest_api():\n    from solution import app\n    client = app.test_client()\n\
+  \    assert client.get('/').status_code == 200\n"
+timeout_seconds: 120

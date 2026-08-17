@@ -1,0 +1,10 @@
+description: Write Dijkstra's shortest path algorithm. Write comprehensive pytest
+  tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: graph_shortest_path
+max_iterations: 10
+test_file: "def test_dijkstra():\n    from solution import shortest_path\n    assert\
+  \ shortest_path({'A': {'B': 1}}, 'A', 'B') == 1\n"
+timeout_seconds: 120

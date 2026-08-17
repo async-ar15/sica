@@ -1,0 +1,10 @@
+description: Write a singly linked list with insert/delete/search. Write comprehensive
+  pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: linked_list
+max_iterations: 5
+test_file: "def test_linked_list():\n    from solution import LinkedList\n    ll =\
+  \ LinkedList()\n    ll.insert(1)\n    assert ll.search(1) is True\n"
+timeout_seconds: 60

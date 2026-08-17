@@ -1,0 +1,10 @@
+description: Write a Python function called 'factorial' that computes factorial. Write
+  comprehensive pytest tests.
+difficulty: easy
+expected_files:
+- solution.py
+id: factorial
+max_iterations: 3
+test_file: "def test_factorial():\n    from solution import factorial\n    assert\
+  \ factorial(5) == 120\n"
+timeout_seconds: 30

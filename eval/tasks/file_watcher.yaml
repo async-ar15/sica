@@ -1,0 +1,10 @@
+description: Write a file watcher that detects changes. Write comprehensive pytest
+  tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: file_watcher
+max_iterations: 10
+test_file: "def test_file_watcher():\n    from solution import FileWatcher\n    w\
+  \ = FileWatcher()\n"
+timeout_seconds: 120

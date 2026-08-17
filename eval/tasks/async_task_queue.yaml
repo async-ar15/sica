@@ -1,0 +1,9 @@
+description: Write an async task queue with priority. Write comprehensive pytest tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: async_task_queue
+max_iterations: 10
+test_file: "def test_async_queue():\n    import asyncio\n    from solution import\
+  \ TaskQueue\n    q = TaskQueue()\n"
+timeout_seconds: 120

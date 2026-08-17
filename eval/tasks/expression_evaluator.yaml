@@ -1,0 +1,10 @@
+description: Write a math expression evaluator (operator precedence). Write comprehensive
+  pytest tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: expression_evaluator
+max_iterations: 10
+test_file: "def test_evaluator():\n    from solution import evaluate\n    assert evaluate('1\
+  \ + 2 * 3') == 7\n"
+timeout_seconds: 120

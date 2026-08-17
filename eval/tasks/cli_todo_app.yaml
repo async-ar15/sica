@@ -1,0 +1,8 @@
+description: Write a CLI todo app with persistence. Write comprehensive pytest tests.
+difficulty: hard
+expected_files:
+- solution.py
+id: cli_todo_app
+max_iterations: 10
+test_file: "def test_cli():\n    from solution import TodoApp\n    app = TodoApp()\n"
+timeout_seconds: 120

@@ -1,0 +1,10 @@
+description: Write a Stack class with push/pop/peek/is_empty. Write comprehensive
+  pytest tests.
+difficulty: medium
+expected_files:
+- solution.py
+id: stack_class
+max_iterations: 5
+test_file: "def test_stack():\n    from solution import Stack\n    s = Stack()\n \
+  \   assert s.is_empty() is True\n"
+timeout_seconds: 60

@@ -1,0 +1,12 @@
+description: Write a Python function called 'reverse_string' that takes a string and
+  returns it reversed. Write comprehensive pytest tests.
+difficulty: easy
+expected_files:
+- solution.py
+id: reverse_string
+max_iterations: 3
+test_file: "def test_reverse_string():\n    from solution import reverse_string\n\
+  \    assert reverse_string('hello') == 'olleh'\n    assert reverse_string('') ==\
+  \ ''\n    assert reverse_string('a') == 'a'\n    assert reverse_string('racecar')\
+  \ == 'racecar'\n"
+timeout_seconds: 30
