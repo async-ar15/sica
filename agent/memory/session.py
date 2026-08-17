@@ -3,7 +3,7 @@ import os
 import platform
 from collections.abc import Generator
 from contextlib import contextmanager
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from pathlib import Path
 from typing import Any
@@ -23,7 +23,7 @@ class CheckpointData(BaseModel):
     current_hypothesis: str = ""
     tried_hypotheses: list[str] = Field(default_factory=list)
     task_id: str = ""
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 class MemoryCategory(StrEnum):
     """Categories for MEMORY.md entries."""
@@ -98,7 +98,7 @@ class SessionMemory:
         """Appends a fact under the correct section header in MEMORY.md."""
         content = self.read_memory()
 
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         fact_line = f"- [{category.value}] {fact} (from task: {source_task}, {timestamp})"
 
         header = f"## {category.value.capitalize()}"
@@ -232,7 +232,7 @@ class SessionMemory:
     def create_task_log(self, task_id: str, goal: str) -> None:
         """Creates a new task log file."""
         log_file = self.task_logs_dir / f"{task_id}.md"
-        timestamp = datetime.now(timezone.utc).isoformat()
+        timestamp = datetime.now(UTC).isoformat()
         content = f"# Task: {task_id}\n## Goal: {goal}\n## Started: {timestamp}\n"
         self._atomic_write(log_file, content)
 
